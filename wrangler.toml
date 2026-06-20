@@ -14,9 +14,14 @@ run_worker_first = false
 [triggers]
 crons = [ "*/5 * * * *" ]
 
+[[routes]]
+pattern = "nw.4321231.xyz"
+custom_domain = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "nodewarden-db"
+database_id = "f7074101-ac4e-41c7-b11b-8045d86a133f"
 
 [[durable_objects.bindings]]
 name = "NOTIFICATIONS_HUB"
