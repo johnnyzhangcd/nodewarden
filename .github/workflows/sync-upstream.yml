@@ -93,9 +93,21 @@ jobs:
         run: |
           TARGET_SHA="${{ steps.resolve.outputs.target_sha }}"
           git checkout main
-          # Merge so fork-specific production settings remain intact. A real
-          # conflict stops the job instead of silently replacing configuration.
-          git merge "$TARGET_SHA" --no-edit
+          # Merge so fork-specific production settings remain intact. If
+          # upstream deletes this fork-only workflow, keep our copy and finish
+          # the merge; all other conflicts still stop the job.
+          if ! git merge "$TARGET_SHA" --no-edit; then
+            CONFLICTS=$(git diff --name-only --diff-filter=U)
+            if [ "$CONFLICTS" != ".github/workflows/sync-upstream.yml" ]; then
+              echo "Merge failed with unresolved conflicts:"
+              git status --short
+              exit 1
+            fi
+            echo "Upstream removed sync-upstream.yml; keeping fork workflow."
+            git checkout --ours -- .github/workflows/sync-upstream.yml
+            git add .github/workflows/sync-upstream.yml
+            git commit --no-edit
+          fi
 
       - name: Restore workflow file
         if: steps.check.outputs.needs_update == 'true'
